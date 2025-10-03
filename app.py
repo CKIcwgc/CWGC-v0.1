@@ -85,6 +85,8 @@ def ask():
         .option.selected {
             background-color: #a5d6a7;
             border-color: #388e3c;
+            transform: scale(1.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
         .option.incorrect {
@@ -186,6 +188,52 @@ def ask():
             80%, 99.9% { margin-top: 30%; margin-left: 80%; }
         }
 
+        .score-container {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .score-label {
+            font-weight: bold;
+            color: #2196f3;
+        }
+
+        .btn-group {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .clear-btn {
+            background-color: #ff9800;
+        }
+
+        .clear-btn:hover:not(:disabled) {
+            background-color: #f57c00;
+        }
+
+        .hint-text {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin: 5px 0;
+            font-style: italic;
+        }
+
+        .progress-label {
+            display: inline-block;
+            font-size: 11px;
+            color: #666;
+            margin: 0 2px;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 5px; }
             h1 { font-size: 18px; }
@@ -206,28 +254,38 @@ def ask():
 
         <h1>CWGC實用文格式溫習機 v0.1</h1>
 
+        <div class="score-container" id="score-container">
+            <span class="score-label">得分：</span>
+            <span id="score">0</span> / 
+            <span id="total-questions">5</span>
+        </div>
+
         <div class="progress" id="progress">
-            <div class="progress-item" data-type="書信"></div>
-            <div class="progress-item" data-type="建議書"></div>
-            <div class="progress-item" data-type="報告"></div>
-            <div class="progress-item" data-type="專題文章"></div>
-            <div class="progress-item" data-type="演講辭"></div>
+            <span class="progress-label">書信</span><div class="progress-item" data-type="書信"></div>
+            <span class="progress-label">建議書</span><div class="progress-item" data-type="建議書"></div>
+            <span class="progress-label">報告</span><div class="progress-item" data-type="報告"></div>
+            <span class="progress-label">專題文章</span><div class="progress-item" data-type="專題文章"></div>
+            <span class="progress-label">演講辭</span><div class="progress-item" data-type="演講辭"></div>
         </div>
 
         <h2>請選擇「<span id="current-type">書信</span>」應該包含的格式：</h2>
+        <div class="hint-text">💡 點擊選項以選擇或取消選擇</div>
 
         <div id="format-sections"></div>
 
-        <div class="correct-message" id="correct-message">對了！棒棒你真棒!</div>
-        <div class="success-message" id="success-message">恭喜你通過了所有測驗！實用文達人是你!</div>
+        <div class="correct-message" id="correct-message">✅ 對了！棒棒你真棒!</div>
+        <div class="success-message" id="success-message">🎉 恭喜你通過了所有測驗！實用文達人是你!</div>
 
-        <button class="btn" id="check-btn">確認答案</button>
-        <button class="btn" id="show-answer-btn">顯示答案</button>
-        <button class="btn" id="next-btn" style="display: none;">下一題</button>
-        <button class="btn" id="restart-btn" style="display: none;">重新開始</button>
+        <div class="btn-group">
+            <button class="btn clear-btn" id="clear-btn" aria-label="清除所有選擇" title="快捷鍵: Esc">清除選擇</button>
+            <button class="btn" id="check-btn" aria-label="確認當前答案" title="快捷鍵: Enter">確認答案</button>
+            <button class="btn" id="show-answer-btn" aria-label="顯示正確答案">顯示答案</button>
+            <button class="btn" id="next-btn" style="display: none;" aria-label="繼續下一題" title="快捷鍵: Enter">下一題</button>
+            <button class="btn" id="restart-btn" style="display: none;" aria-label="重新開始測驗" title="快捷鍵: Enter">重新開始</button>
+        </div>
     </div>
 
-    <script> <!--邊個偷睇。\ ^ /。  要靠自己背咗佢!-->
+    <script> <!--邊個偷睇。\\^ /。  要靠自己背咗佢!-->
         const documentFormats = {
             '書信': {
                 '受文者': ['受文團體', '姓', '身份', '知照語'],
@@ -289,6 +347,7 @@ def ask():
         const allFormatCategories = ['受文者', '標題', '引言', '主體', '結語', '下款', '日期'];
         const completedTypes = new Set();
         let currentType = '';
+        let score = 0;
         const selectedOptions = {};
 
         function init() {
@@ -298,13 +357,30 @@ def ask():
             document.getElementById('next-btn').style.display = 'none';
             document.getElementById('check-btn').style.display = 'inline-block';
             document.getElementById('show-answer-btn').style.display = 'inline-block';
+            document.getElementById('clear-btn').style.display = 'inline-block';
             document.getElementById('fireworks').style.display = 'none';
+            score = 0;
             completedTypes.clear();
             allFormatCategories.forEach(category => {
                 selectedOptions[category] = new Set();
             });
+            updateScore();
             updateProgress();
             selectNextType();
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function clearSelection() {
+            allFormatCategories.forEach(category => {
+                selectedOptions[category].clear();
+                document.querySelectorAll(`.option[data-category="${category}"]`).forEach(option => {
+                    option.classList.remove('selected');
+                    option.classList.remove('incorrect');
+                });
+            });
         }
 
         function selectNextType() {
@@ -313,6 +389,7 @@ def ask():
                 document.getElementById('success-message').style.display = 'block';
                 document.getElementById('check-btn').style.display = 'none';
                 document.getElementById('show-answer-btn').style.display = 'none';
+                document.getElementById('clear-btn').style.display = 'none';
                 document.getElementById('next-btn').style.display = 'none';
                 document.getElementById('restart-btn').style.display = 'inline-block';
                 document.getElementById('fireworks').style.display = 'block';
@@ -324,6 +401,7 @@ def ask():
             document.getElementById('fireworks').style.display = 'none';
             document.getElementById('check-btn').style.display = 'inline-block';
             document.getElementById('show-answer-btn').style.display = 'inline-block';
+            document.getElementById('clear-btn').style.display = 'inline-block';
             document.getElementById('next-btn').style.display = 'none';
             allFormatCategories.forEach(category => {
                 selectedOptions[category] = new Set();
@@ -378,9 +456,12 @@ def ask():
                 }
             });
             if (allCorrect) {
+                score++;
+                updateScore();
                 document.getElementById('correct-message').style.display = 'block';
                 document.getElementById('check-btn').style.display = 'none';
                 document.getElementById('show-answer-btn').style.display = 'none';
+                document.getElementById('clear-btn').style.display = 'none';
                 document.getElementById('next-btn').style.display = 'inline-block';
                 document.getElementById('fireworks').style.display = 'block';
                 completedTypes.add(currentType);
@@ -424,6 +505,7 @@ def ask():
             });
             document.getElementById('check-btn').style.display = 'none';
             document.getElementById('show-answer-btn').style.display = 'none';
+            document.getElementById('clear-btn').style.display = 'none';
             document.getElementById('next-btn').style.display = 'inline-block';
         }
 
@@ -440,8 +522,27 @@ def ask():
 
         document.getElementById('check-btn').addEventListener('click', checkAnswer);
         document.getElementById('show-answer-btn').addEventListener('click', showAnswer);
+        document.getElementById('clear-btn').addEventListener('click', clearSelection);
         document.getElementById('next-btn').addEventListener('click', selectNextType);
         document.getElementById('restart-btn').addEventListener('click', init);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (document.getElementById('check-btn').style.display !== 'none') {
+                    checkAnswer();
+                } else if (document.getElementById('next-btn').style.display !== 'none') {
+                    selectNextType();
+                } else if (document.getElementById('restart-btn').style.display !== 'none') {
+                    init();
+                }
+            } else if (e.key === 'Escape') {
+                if (document.getElementById('clear-btn').style.display !== 'none') {
+                    clearSelection();
+                }
+            }
+        });
+        
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
